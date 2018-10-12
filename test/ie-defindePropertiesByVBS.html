@@ -1,0 +1,197 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body{background-color: #eee}
+*{box-sizing: border-box;}
+.b{border: 2px solid #ccc; background-color: #fff;}
+.p{padding: 1em;}
+.fl{float: left;}
+.w50{width: 50%;}
+.w33{width: 33%;}
+</style>
+</head>
+<body>
+  <div>
+    <div class="fl w33 b p">
+        <p mv-style="font-size:{{size}}px;color:{{color}};">{{text}}</p>
+    </div>
+    <div class="fl w33 b p">
+        <p>[size={{size}}][color={{color}}]{{text}}[/color][/size]</p>
+    </div>
+    <div class="fl w33 p">
+        <p>内容: <input mv-duplex="text" value="" /></p>
+        <p>字号: <input mv-duplex="size" value="" /></p>
+        <p>颜色: <input mv-duplex="color" value="" /></p>
+        <p><button id="submit">保存</button></p>
+    </div>
+  </div>
+<script src="../utils/es5-shim.js"></script>
+<script src="../utils/lang.js"></script>
+<script src="../utils/defindePropertiesByVBS.js"></script>
+
+<script>
+
+var DIRECTIVE_ATTR_MODEL = 'mv-duplex',
+    regMustache = /\{\{\s*(\w+)\s*\}\}/g;
+
+var _model ={
+    text : '',
+    color : '',
+    size : '',
+    changeText: function(){
+      this.text = Math.random().toString(36)
+      console.log(this.text, this)
+    }
+}
+
+
+var $model = observable(_model) 
+
+var _updateFuncs={};
+for(var k in $model){
+    _updateFuncs[k]=[];
+}
+
+bootComponent(document.body);
+
+function bootComponent(el) {
+    traverse(el, $model);
+}
+
+function traverse(root, $model) {
+    for (var el = root.firstChild; el; el = el.nextSibling) {
+        parseElement(el, $model);
+        if (el) {
+            traverse(el, $model);
+        }
+    }
+}
+
+function parseElement(el, $model) {
+    if (el.nodeType === 1 && el.tagName == 'INPUT') {
+        // element
+        if (el.hasAttribute(DIRECTIVE_ATTR_MODEL)) {
+            var model = el.getAttribute(DIRECTIVE_ATTR_MODEL);
+            el.removeAttribute(DIRECTIVE_ATTR_MODEL);
+			el.value=$model[model];
+            if(el.addEventListener){
+              el.addEventListener('input', function (evt) {
+                  $model[model] = this.value;        
+              }, false);
+            }else{
+              el.attachEvent('onpropertychange', function (evt) {
+                  if(evt.propertyName=='value'){
+                      $model[model] = this.value;
+                  }                  
+              }.bind(el));
+            }
+        }
+    } else{
+        if(el.nodeName=='#text' && el.nodeValue.match(regMustache)){
+            // text node
+            el.parentNode._textContent = [];
+            var text = el.nodeValue;
+            var lastIndex = 0;
+            regMustache.lastIndex = 0;
+            var match = regMustache.exec(text);
+
+            var matchedKey = {}; //记录这个字符串中匹配到的占位符
+            while (match) {
+                matchedKey[match[1]] = true;
+                el.parentNode._textContent.push(text.substring(lastIndex, regMustache.lastIndex - match[0].length));
+                el.parentNode._textContent.push({
+                    type : 'var',
+                    content : match[1]
+                });
+                lastIndex = regMustache.lastIndex;
+                match = regMustache.exec(text);
+            }
+            el.parentNode._textContent.push(text.substring(lastIndex));
+            var updateText = (function () {
+                var text = '';
+                this.parentNode._textContent.forEach(function (item) {
+                    text += typeof item === 'string' ? item : $model[item.content];
+                });
+                this.nodeValue = text;
+            }).bind(el);
+            for (var k in matchedKey) {
+                _updateFuncs[k].push(updateText);
+            }
+            updateText();
+        }
+        if(el.nodeType === 1 && el.getAttribute("mv-style") && el.getAttribute("mv-style").match(regMustache)){
+            el._style = [];
+            var attrValue = el.getAttribute("mv-style")
+            var lastIndex = 0;
+            regMustache.lastIndex = 0;
+            var match = regMustache.exec(attrValue);
+            var matchedKey={};//记录这个字符串中匹配到的占位符
+            while (match) {
+                matchedKey[match[1]]=true;
+                el._style.push(attrValue.substring(lastIndex, regMustache.lastIndex - match[0].length));
+                el._style.push({
+                    type: 'var',
+                    content: match[1]
+                });
+                lastIndex = regMustache.lastIndex;
+                match = regMustache.exec(attrValue);
+            }
+            var updateAttr=(function () {
+                var attrValue = '';
+                this._style.forEach(function (item) {
+                    attrValue += typeof item === 'string' ? item : $model[item.content];
+                });
+                this.style.cssText = attrValue;
+            }).bind(el);
+            for(var k in matchedKey){
+                _updateFuncs[k].push(updateAttr);
+            }
+            updateAttr();
+        }
+
+    }
+}
+
+
+
+function observable($model) {
+  var accessors = {} //监控属性
+    for (var key in $model) {
+      (function(k){
+        var oldVal = $model[k]
+        accessors[k] = {
+          enumerable : true, // 默认为 false， 在IE8下设置为true时报错
+          configurable : true,
+          get : function () {
+            return oldVal
+          },
+          set : function (now) {
+            if (now !== oldVal) {
+              oldVal = now
+              _updateFuncs[k].forEach(function (updateFn) {
+                updateFn();
+              });
+            }
+          }
+        }      
+      })(key)
+    }
+	 Object.defineProperties($model,accessors)
+	 $vmodel = Object.definePropertiesByVBS($model)
+   return $vmodel
+}
+
+if(submit.addEventListener){
+  submit.addEventListener('click', function () {
+      alert(JSON.stringify($model));
+  },false);
+}else{
+  submit.attachEvent('onclick', function () {
+      alert(JSON.stringify($model));
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Vue-IE</title>
+</head>
+<script>
+          document.createElement('child')
+</script>
+<body>
+  <div id="root">
+    <p>{{ message }}</p>
+    <input v-model="message">
+    <input type="button" v-on:click="reverseMessage" value="反转">
+    <hr>
+    <input v-model="newTodo" v-on:keyup.enter="addTodo">
+    <ul>
+      <li v-for="todo in todos">
+        <span>{{ todo.text }}</span>
+        <input type="button" v-on:click="removeTodo($index)" value="X">
+      </li>
+    </ul>
+    <hr>
+    <p>
+      a={{ a }}, b={{ b }}
+    </p>
+    <hr>
+    <div id="demo">{{fullName}}</div>
+    <hr>
+    <input type="checkbox" id="jack" value="Jack" v-model="checkedNames">
+    <label for="jack">Jack</label>
+    <input type="checkbox" id="john" value="John" v-model="checkedNames">
+    <label for="john">John</label>
+    <input type="checkbox" id="mike" value="Mike" v-model="checkedNames">
+    <label for="mike">Mike</label>
+    <br>
+    <span>Checked names: {{ checkedNames | json }}</span>
+    <hr>
+    <select v-model="selected">
+        <option v-for="option in options" v-bind:value="option.value">
+          {{ option.text }}
+        </option>
+      </select>
+      <span>Selected: {{ selected }}</span> 
+    <hr>
+    <input v-model="parentMsg">
+    <br>
+    <child v-bind:my-message="parentMsg"></child>
+
+  </div>
+  <script src="../utils/es5-shim.js"></script>
+  <script src="../utils/es6-shim.js"></script>
+  <script src="../utils/lang.js"></script>
+  <script src="../utils/definePropertiesByVBS.js"></script>
+  <script src="../vue1.0-ie.js"></script>
+  <script>
+    Vue.component('child', {
+      props: ['myMessage'],
+      template: '<span>{{ myMessage }}</span>'
+    })
+
+    var app = new Vue({
+      el: '#root',
+      data: {
+        message: 'Hello Vue.js!',
+        newTodo: '',
+        todos: [
+          { text: 'Add some todos' }
+        ],
+        a: 1,
+        firstName: 'Foo',
+        lastName: 'Bar',
+        checkedNames: [],
+        selected: 'A',
+        options: [
+          { text: 'One', value: 'A' },
+          { text: 'Two', value: 'B' },
+          { text: 'Three', value: 'C' }
+        ],
+        parentMsg:'Message from parent'
+      },
+      computed: {
+        // a computed getter
+        b: function () {
+          // `this` points to the vm instance
+          return this.a + 1
+        },
+        fullName: {
+          // getter
+          get: function () {
+            return this.firstName + ' ' + this.lastName
+          },
+          // setter
+          set: function (newValue) {
+            var names = newValue.split(' ')
+            this.firstName = names[0]
+            this.lastName = names[names.length - 1]
+          }
+        }
+      },
+      methods: {
+        reverseMessage: function () {
+          this.message = this.message.split('').reverse().join('')
+        },
+        addTodo: function () {
+          var text = this.newTodo.trim()
+          if (text) {
+            this.todos.push({ text: text })
+            this.newTodo = ''
+          }
+        },
+        removeTodo: function (index) {
+          this.todos.splice(index, 1)
+        }
+      }
+
+    }) 
+  </script>
+</body>
+
+</html>
