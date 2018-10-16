@@ -257,8 +257,12 @@
         get: function(){}
       }
     }
-    for (var key in opts.data) {
-      if (!opts.data.hasOwnProperty(key) || hasSpecialKey(key)) continue
+    var opts_data = opts.data
+    if(typeof opts_data === 'function'){
+      opts_data = opts_data.call(compDefi)
+    }
+    for (var key in opts_data) {
+      if (!opts_data.hasOwnProperty(key) || hasSpecialKey(key)) continue
       uniq[key] = true
       attrs[key] = {
         // 暂时设置为空，最后应该由vue设置为setter/getter方法
