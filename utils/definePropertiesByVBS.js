@@ -240,6 +240,69 @@
 
     var uniq = {}
     var opts = options || {}
+    var opts_props = []
+    var opts_data = []
+    var opts_computed = []
+    var opts_methods = []
+    var opts_methods_obj = {}
+    
+    if(opts.props && Object.prototype.toString.call(opts_props)==='[object Array]'){
+      opts_props=opts.props
+    }else if(opts.props && typeof opts.props === 'object'){
+      opts_props = Object.keys(opts.props)
+    }
+
+    if(opts.data && typeof opts.data === 'function'){
+      opts_data = opts.data.call(compDefi)
+      opts_data = Object.keys(opts_data)
+    }else if(opts.data && typeof opts.data === 'object'){
+      opts_data = Object.keys(opts.data)
+    }
+
+    if(opts.computed){
+      opts_computed = Object.keys(opts.computed)
+    }
+
+    if(opts.methods){
+      opts_methods = Object.keys(opts.methods)
+      opts_methods_obj = Object.assign({}, opts.methods)
+    }
+    
+    if(opts.mixins && opts.mixins.length){
+      for(var i=0;i<opts.mixins.length;i++){
+        var mixProps = [];
+        if(opts.mixins[i].props && Object.prototype.toString.call(opts.mixins[i].props)==='[object Array]'){
+          mixProps = opts.mixins[i].props
+        }else if(opts.mixins[i].props && typeof opts.mixins[i].props === 'object'){
+          mixProps = Object.keys(opts.mixins[i].props)
+        }
+        if(mixProps.length){
+          opts_props = opts_props.concat(mixProps)
+        }
+
+        var mixData = opts.mixins[i].data
+        if(opts.mixins[i].data && typeof mixData === 'function'){
+          mixData = mixData.call(compDefi)
+        }
+        if(mixData){
+          mixData = Object.keys(mixData)
+          opts_data = opts_data.concat(mixData)
+        }
+
+        var mixComputed = opts.mixins[i].computed
+        if(mixComputed){
+          mixComputed = Object.keys(mixComputed)
+          opts_computed = opts_computed.concat(mixComputed)
+        }
+        var mixMethods = opts.mixins[i].methods
+        if(mixMethods){
+          opts_methods_obj = Object.assign({},mixMethods,opts_methods_obj)
+          mixMethods = Object.keys(mixMethods)
+          opts_methods = opts_methods.concat(mixMethods)
+        }
+
+      }
+    }
     if(compDefi.options){
       for(var key in compDefi.options){
       if (!compDefi.options.hasOwnProperty(key)) continue
@@ -248,8 +311,9 @@
         }
       }
     }
-    for (var key in opts.props) {
-      if (!opts.props.hasOwnProperty(key) || hasSpecialKey(key)) continue
+    for (var i=0;i<opts_props.length;i++) {
+      var key = opts_props[i]
+      if (hasSpecialKey(key)) continue
       uniq[key] = true
       attrs[key] = {
         // 暂时设置为空，最后应该由vue设置为setter/getter方法
@@ -257,12 +321,10 @@
         get: function(){}
       }
     }
-    var opts_data = opts.data
-    if(typeof opts_data === 'function'){
-      opts_data = opts_data.call(compDefi)
-    }
-    for (var key in opts_data) {
-      if (!opts_data.hasOwnProperty(key) || hasSpecialKey(key)) continue
+
+    for (var i=0;i<opts_data.length;i++) {
+      var key = opts_data[i]
+      if (hasSpecialKey(key)) continue
       uniq[key] = true
       attrs[key] = {
         // 暂时设置为空，最后应该由vue设置为setter/getter方法
@@ -270,10 +332,11 @@
         get: function(){}
       }
     }
-    for (var key in opts.computed) {
-      if (!opts.computed.hasOwnProperty(key) || hasSpecialKey(key)) continue
+    for (var i=0;i<opts_computed.length;i++) {
+      var key = opts_computed[i]
+      if (hasSpecialKey(key)) continue
       uniq[key] = true
-       attrs[key] = {
+      attrs[key] = {
         // 暂时设置为空，最后应该由vue设置为setter/getter方法
         set: function(){},
         get: function(){}
@@ -292,8 +355,9 @@
       }
     }
 
-    for (var key in opts.methods) {
-      if (uniq[key] || !opts.methods.hasOwnProperty(key) || hasSpecialKey(key)) continue
+    for (var i=0;i<opts_methods.length;i++) {
+      var key = opts_methods[i]      
+      if (uniq[key] || hasSpecialKey(key)) continue
       uniq[key] = true
       methods.push(key)
       buffer.push('\tPublic [' + key + ']')
@@ -340,7 +404,7 @@
     re = window[className + 'F'](proxy, cb_poll)
 
     methods.forEach(function (name) {
-      re[name] = opts.methods[name].bind(re)
+      re[name] = opts_methods_obj[name].bind(re)
     })
     vueProto.forEach(function (name) {
       if (typeof compDefi.prototype[name] === 'function') {

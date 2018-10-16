@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Vue-IE</title>
+</head>
+<script>
+  document.createElement('template')
+</script>
+<style>
+template {
+    display: none;
+}
+</style>
+<body>
+<div id="root">
+
+</div>
+
+  <script src="../utils/es5-shim.js"></script>
+  <script src="../utils/es6-shim.js"></script>
+  <script src="../utils/lang.js"></script>
+  <script src="../utils/definePropertiesByVBS.js"></script>
+  <script src="../vue1-ie.js"></script>
+  <script>
+var mixin = {
+  methods: {
+    foo: function () {
+      console.log('foo')
+    },
+    conflicting: function () {
+      console.log('from mixin')
+    }
+  }
+}
+var vm = new Vue({
+  mixins: [mixin],
+  methods: {
+    bar: function () {
+      console.log('bar')
+    },
+    conflicting: function () {
+      console.log('from self')
+    }
+  }
+})
+vm.foo() // -> "foo"
+vm.bar() // -> "bar"
+vm.conflicting() // -> "from self"
+  </script>
+</body>
+
+</html>

@@ -66,6 +66,36 @@
       return result
     }
   }
+  if (typeof Object.assign !== 'function') {
+    Object.assign = function (target, firstSource) {
+      if (target === undefined || target === null) {
+        throw new TypeError('Cannot convert first argument to object');
+      }
+    
+      var to = Object(target);
+      for (var i = 1; i < arguments.length; i++) {
+        var nextSource = arguments[i];
+        if (nextSource === undefined || nextSource === null) {
+          continue;
+        }
+    
+        var keysArray = Object.keys(Object(nextSource));
+        for (var nextIndex = 0, len = keysArray.length; nextIndex < len; nextIndex++) {
+          var nextKey = keysArray[nextIndex];
+          try{
+            // IE8下Object.getOwnPropertyDescriptor报错
+            var desc = Object.getOwnPropertyDescriptor(nextSource, nextKey);
+            if (desc !== undefined && desc.enumerable) {
+              to[nextKey] = nextSource[nextKey];
+            }
+          }catch(e){
+            to[nextKey] = nextSource[nextKey];
+          }
+       }
+      }
+      return to;
+    }
+  }
   /* if (typeof Object.getOwnPropertyDescriptor !== 'function') {
     function isPrimitive (val) {
       if (typeof val === 'object') {
