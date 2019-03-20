@@ -6,3 +6,5 @@ Vue1适配IE8，Vue1兼容IE8。
 感谢以下项目提供的IE6/7/8下实现setter/getter的思路：  
 https://github.com/dojo/dojox/blob/master/lang/observable.js  
 https://github.com/RubyLouvre/avalon/blob/1.6/src/model/defineProperties.js  
+
+实现过程的工作笔记：https://github.com/abeet/Blog/issues/35
